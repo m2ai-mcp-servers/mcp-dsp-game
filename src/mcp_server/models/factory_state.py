@@ -2,7 +2,14 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Energy conversion: DSP uses energy per tick, 60 ticks = 1 second
+# 1 MW = 1,000,000 J/s = 1,000,000 / 60 J/tick ≈ 16,666.67 J/tick
+ENERGY_PER_TICK_TO_MW = 60 / 1_000_000
 
 
 @dataclass
@@ -123,8 +130,130 @@ class FactoryState:
         )
 
     @classmethod
-    def from_save_data(cls, save_data: dict) -> "FactoryState":
-        """Construct FactoryState from parsed save file."""
-        # TODO: Transform qhgz2013 parser output to FactoryState
-        # This will be implemented in Phase 1A
-        return cls(timestamp=datetime.now(), planets={})
+    def from_save_data(cls, game_save: Any) -> "FactoryState":
+        """
+        Construct FactoryState from parsed GameSave object.
+
+        Args:
+            game_save: GameSave object from dsp_save_parser
+
+        Returns:
+            FactoryState with extracted factory data
+        """
+        planets: Dict[int, PlanetState] = {}
+
+        try:
+            game_data = game_save.gameData
+            factories = game_data.factories if hasattr(game_data, 'factories') else []
+
+            for factory in factories:
+                if not hasattr(factory, 'planetId'):
+                    continue
+
+                planet_id = int(factory.planetId)
+                planet_state = PlanetState(planet_id=planet_id)
+
+                # Extract power metrics
+                if hasattr(factory, 'powerSystem'):
+                    planet_state.power = cls._extract_power_metrics(factory.powerSystem)
+
+                # Extract assembler metrics
+                if hasattr(factory, 'factorySystem'):
+                    planet_state.assemblers = cls._extract_assembler_metrics(
+                        factory.factorySystem
+                    )
+
+                planets[planet_id] = planet_state
+                logger.debug(f"Processed planet {planet_id}")
+
+            # Extract production statistics if available
+            if hasattr(game_data, 'statistics'):
+                cls._merge_production_stats(planets, game_data.statistics)
+
+        except Exception as e:
+            logger.error(f"Error parsing save data: {e}")
+            raise
+
+        return cls(
+            timestamp=datetime.now(),
+            planets=planets,
+        )
+
+    @staticmethod
+    def _extract_power_metrics(power_system: Any) -> PowerMetrics:
+        """Extract power metrics from PowerSystem."""
+        total_generation = 0.0
+        total_consumption = 0.0
+        accumulator_current = 0
+        accumulator_max = 0
+
+        # Sum up generator output
+        if hasattr(power_system, 'genPool'):
+            for gen in power_system.genPool:
+                if hasattr(gen, 'genEnergyPerTick') and hasattr(gen, 'id') and gen.id > 0:
+                    total_generation += float(gen.genEnergyPerTick)
+
+        # Sum up consumer demand
+        if hasattr(power_system, 'consumerPool'):
+            for consumer in power_system.consumerPool:
+                if hasattr(consumer, 'workEnergyPerTick') and hasattr(consumer, 'id') and consumer.id > 0:
+                    total_consumption += float(consumer.workEnergyPerTick)
+
+        # Sum up accumulator charge
+        if hasattr(power_system, 'accPool'):
+            for acc in power_system.accPool:
+                if hasattr(acc, 'curEnergy') and hasattr(acc, 'maxEnergy') and hasattr(acc, 'id') and acc.id > 0:
+                    accumulator_current += int(acc.curEnergy)
+                    accumulator_max += int(acc.maxEnergy)
+
+        # Convert to MW
+        generation_mw = total_generation * ENERGY_PER_TICK_TO_MW
+        consumption_mw = total_consumption * ENERGY_PER_TICK_TO_MW
+
+        # Calculate accumulator percentage
+        acc_percent = (accumulator_current / accumulator_max * 100) if accumulator_max > 0 else 0.0
+
+        return PowerMetrics(
+            generation_mw=generation_mw,
+            consumption_mw=consumption_mw,
+            accumulator_charge_percent=acc_percent,
+        )
+
+    @staticmethod
+    def _extract_assembler_metrics(factory_system: Any) -> List[AssemblerMetrics]:
+        """Extract assembler metrics from FactorySystem."""
+        assemblers: List[AssemblerMetrics] = []
+
+        if not hasattr(factory_system, 'assemblerPool'):
+            return assemblers
+
+        for assembler in factory_system.assemblerPool:
+            if not hasattr(assembler, 'id') or assembler.id <= 0:
+                continue
+            if not hasattr(assembler, 'recipeId') or assembler.recipeId <= 0:
+                continue
+
+            # Calculate production rate from speed and time
+            # Note: Actual rate calculation needs recipe database
+            # For now, we store the raw values
+            assemblers.append(AssemblerMetrics(
+                assembler_id=int(assembler.id),
+                recipe_id=int(assembler.recipeId),
+                production_rate=0.0,  # TODO: Calculate from recipe database
+                theoretical_max=0.0,   # TODO: Get from recipe database
+                input_starved=False,   # TODO: Detect from input buffer state
+                output_blocked=False,  # TODO: Detect from output buffer state
+            ))
+
+        return assemblers
+
+    @staticmethod
+    def _merge_production_stats(
+        planets: Dict[int, "PlanetState"],
+        statistics: Any,
+    ) -> None:
+        """Merge production statistics into planet states."""
+        # The statistics object contains FactoryProductionStat per factory
+        # This provides historical production/consumption data
+        # TODO: Implement full statistics integration
+        pass

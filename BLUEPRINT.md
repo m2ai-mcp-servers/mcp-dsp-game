@@ -7,32 +7,33 @@ Track implementation progress across all phases. Check boxes as features are com
 ---
 
 ## Phase 0: Foundation
-**Status**: In Progress
+**Status**: Complete
 **Goal**: Repository structure and development environment
 
 - [x] Repository structure creation
 - [x] README.md with project vision
 - [x] pyproject.toml configuration
 - [x] .gitignore setup
-- [ ] Development environment documentation
-- [ ] C# project file (.csproj) for BepInEx plugin
-- [ ] Python package structure (__init__.py files)
-- [ ] Initial commit and push
+- [x] Development environment documentation (copied to docs/)
+- [x] C# project file (.csproj) for BepInEx plugin
+- [x] Python package structure (__init__.py files)
+- [x] Initial commit and push
 
 ---
 
 ## Phase 1A: Save File Analysis (Offline Mode)
-**Status**: Not Started
+**Status**: In Progress
 **Goal**: Parse DSP save files and provide basic factory analysis
 
-- [ ] Integration with qhgz2013/dsp_save_parser
-- [ ] FactoryState data model (`src/mcp_server/models/factory_state.py`)
-- [ ] SaveFileParser data source (`src/mcp_server/data_sources/save_parser.py`)
-- [ ] `load_save_analysis` MCP tool
-- [ ] `get_factory_snapshot` MCP tool
-- [ ] Basic bottleneck detection algorithm
-- [ ] Unit tests with real save file fixtures
-- [ ] Test save file acquisition
+- [x] Integration with qhgz2013/dsp_save_parser (vendored)
+- [x] FactoryState data model (`src/mcp_server/models/factory_state.py`)
+- [x] SaveFileParser data source (`src/mcp_server/data_sources/save_parser.py`)
+- [x] `load_save_analysis` MCP tool (skeleton)
+- [x] `get_factory_snapshot` MCP tool (skeleton)
+- [x] Basic bottleneck detection algorithm (skeleton)
+- [x] Unit tests (28 tests passing)
+- [ ] Test with real DSP save file
+- [ ] Recipe database for production rate calculation
 
 **Success Criteria**:
 - Parse .dsv files in <5 seconds for typical saves
@@ -144,11 +145,11 @@ Track implementation progress across all phases. Check boxes as features are com
 
 | Tool | Priority | Status |
 |------|----------|--------|
-| `get_factory_snapshot` | P0 | Not Started |
-| `load_save_analysis` | P0 | Not Started |
-| `analyze_production_bottlenecks` | P0 | Not Started |
-| `analyze_power_grid` | P1 | Not Started |
-| `analyze_logistics_saturation` | P1 | Not Started |
+| `get_factory_snapshot` | P0 | Skeleton |
+| `load_save_analysis` | P0 | Skeleton |
+| `analyze_production_bottlenecks` | P0 | Skeleton |
+| `analyze_power_grid` | P1 | Skeleton |
+| `analyze_logistics_saturation` | P1 | Skeleton |
 | `generate_optimized_blueprint` | P2 | Not Started |
 
 ### Performance Targets
@@ -164,9 +165,18 @@ Track implementation progress across all phases. Check boxes as features are com
 
 ## Notes
 
-_Add implementation notes, blockers, and decisions here as work progresses._
+### 2024-12-26: Phase 1A Progress
+- Vendored qhgz2013/dsp_save_parser library (not pip-installable)
+- Implemented FactoryState.from_save_data() to extract power metrics and assembler data
+- SaveFileParser now uses the vendored library
+- 28 unit tests passing
+- Need real DSP save file to test full parsing
+
+### Architecture Decision: Vendoring
+The dsp_save_parser library doesn't have setup.py/pyproject.toml, so we vendor it directly
+in `src/mcp_server/vendor/dsp_save_parser/`. This ensures reproducible builds.
 
 ---
 
 **Last Updated**: 2024-12-26
-**Current Phase**: Phase 0 (Foundation)
+**Current Phase**: Phase 1A (Save File Analysis)
