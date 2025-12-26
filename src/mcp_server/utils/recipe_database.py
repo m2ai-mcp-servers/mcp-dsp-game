@@ -145,11 +145,12 @@ class RecipeDatabase:
         for recipe_id_str, recipe_data in data.get("recipes", {}).items():
             recipe_id = int(recipe_id_str)
 
+            # Use _items directly to avoid recursion (items loaded before recipes)
             outputs = [
                 RecipeOutput(
                     item_id=out["item_id"],
                     count=out["count"],
-                    item_name=self.get_item_name(out["item_id"])
+                    item_name=self._items.get(out["item_id"], f"item_{out['item_id']}")
                 )
                 for out in recipe_data.get("outputs", [])
             ]
@@ -158,7 +159,7 @@ class RecipeDatabase:
                 RecipeInput(
                     item_id=inp["item_id"],
                     count=inp["count"],
-                    item_name=self.get_item_name(inp["item_id"])
+                    item_name=self._items.get(inp["item_id"], f"item_{inp['item_id']}")
                 )
                 for inp in recipe_data.get("inputs", [])
             ]

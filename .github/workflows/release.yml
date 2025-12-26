@@ -1,0 +1,132 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+
+      - name: Build package
+        run: python -m build
+
+      - name: Upload Python dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: dist/
+
+  build-plugin:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Download BepInEx dependencies
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/BepInEx/BepInEx/releases/download/v5.4.22/BepInEx_x64_5.4.22.0.zip" -OutFile "bepinex.zip"
+          Expand-Archive -Path "bepinex.zip" -DestinationPath "BepInEx_deps"
+          New-Item -ItemType Directory -Force -Path "src/bepinex_plugin/lib"
+          Copy-Item "BepInEx_deps/BepInEx/core/BepInEx.dll" -Destination "src/bepinex_plugin/lib/"
+          Copy-Item "BepInEx_deps/BepInEx/core/0Harmony.dll" -Destination "src/bepinex_plugin/lib/"
+
+      - name: Build plugin
+        run: dotnet build src/bepinex_plugin/DysonMCP.csproj --configuration Release
+        continue-on-error: true
+
+      - name: Package plugin
+        run: |
+          New-Item -ItemType Directory -Force -Path "release/BepInEx/plugins/DysonMCP"
+          Copy-Item "src/bepinex_plugin/bin/Release/net472/*.dll" -Destination "release/BepInEx/plugins/DysonMCP/" -ErrorAction SilentlyContinue
+          Copy-Item "README.md" -Destination "release/"
+          Compress-Archive -Path "release/*" -DestinationPath "DysonMCP-Plugin.zip"
+        continue-on-error: true
+
+      - name: Upload plugin artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-dist
+          path: DysonMCP-Plugin.zip
+          if-no-files-found: warn
+
+  create-release:
+    needs: [build-python, build-plugin]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Python dist
+        uses: actions/download-artifact@v4
+        with:
+          name: python-dist
+          path: dist/
+
+      - name: Download plugin dist
+        uses: actions/download-artifact@v4
+        with:
+          name: plugin-dist
+          path: plugin/
+        continue-on-error: true
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          cat << 'EOF' > release_notes.md
+          ## Dyson-MCP v${{ steps.version.outputs.VERSION }}
+
+          ### MCP Server (Python)
+          - Factory state analysis from save files and real-time game data
+          - Production bottleneck detection with root cause analysis
+          - Power grid analysis with consumption breakdown
+          - Logistics saturation detection with throughput calculations
+          - Recipe database with 53 DSP recipes
+
+          ### BepInEx Plugin (C#)
+          - Real-time metric collection via Harmony patches
+          - WebSocket server for live data streaming
+          - Production, power, and belt tracking
+
+          ### Installation
+          See [Installation Guide](docs/INSTALLATION.md) for setup instructions.
+
+          ### Requirements
+          - Python 3.10+ for MCP server
+          - Dyson Sphere Program with BepInEx 5.4.x for plugin
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: release_notes.md
+          files: |
+            dist/*
+            plugin/*
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
