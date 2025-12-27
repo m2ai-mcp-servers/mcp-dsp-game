@@ -1,5 +1,5 @@
 [project]
-name = "dyson-mcp"
+name = "mcp-dsp"
 version = "0.1.0"
 description = "MCP server for Dyson Sphere Program factory optimization"
 authors = [{name = "Matthew", email = "matthew@memyselfplusai.com"}]
@@ -38,9 +38,9 @@ dev = [
 dyson-mcp = "mcp_server.server:main"
 
 [project.urls]
-Homepage = "https://github.com/MatthewSnow2/Dyson"
-Repository = "https://github.com/MatthewSnow2/Dyson"
-Issues = "https://github.com/MatthewSnow2/Dyson/issues"
+Homepage = "https://github.com/MatthewSnow2/mcp-dsp"
+Repository = "https://github.com/MatthewSnow2/mcp-dsp"
+Issues = "https://github.com/MatthewSnow2/mcp-dsp/issues"
 
 [build-system]
 requires = ["hatchling"]

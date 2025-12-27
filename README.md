@@ -1,4 +1,4 @@
-# Dyson-MCP
+# mcp-dsp
 
 MCP (Model Context Protocol) server for Dyson Sphere Program factory optimization. Enable AI-assisted bottleneck detection, power grid analysis, and logistics optimization.
 
@@ -110,8 +110,8 @@ See [Development Environment Setup](docs/dyson_mcp.md) for detailed instructions
 
 ```bash
 # Clone repository
-git clone https://github.com/MatthewSnow2/Dyson.git
-cd Dyson
+git clone https://github.com/MatthewSnow2/mcp-dsp.git
+cd mcp-dsp
 
 # Python setup
 python -m venv .venv
