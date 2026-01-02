@@ -3,6 +3,7 @@ using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
 using UnityEngine;
+using System.Reflection;
 
 namespace DysonMCP
 {
@@ -43,6 +44,9 @@ namespace DysonMCP
             // Load configuration
             LoadConfiguration();
 
+            // Log API diagnostics first
+            LogApiDiagnostics();
+
             // Initialize Harmony patches
             try
             {
@@ -52,8 +56,8 @@ namespace DysonMCP
             }
             catch (System.Exception ex)
             {
-                Logger.LogError($"Failed to apply Harmony patches: {ex.Message}");
-                return;
+                Logger.LogWarning($"Some Harmony patches failed (plugin will continue): {ex.Message}");
+                // Continue without patches - WebSocket server can still work for manual data collection
             }
 
             // Initialize metrics collector
@@ -148,6 +152,55 @@ namespace DysonMCP
                         Logger.LogWarning($"Error collecting/broadcasting metrics: {ex.Message}");
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Log API diagnostics to help debug Harmony patches.
+        /// </summary>
+        private void LogApiDiagnostics()
+        {
+            try
+            {
+                // Check AssemblerComponent methods
+                var assemblerType = typeof(AssemblerComponent);
+                Logger.LogInfo($"=== AssemblerComponent Methods ===");
+                foreach (var method in assemblerType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                {
+                    if (method.Name.Contains("Update") || method.Name.Contains("Internal"))
+                    {
+                        var parameters = string.Join(", ", System.Array.ConvertAll(method.GetParameters(), p => $"{p.ParameterType.Name} {p.Name}"));
+                        Logger.LogInfo($"  {method.Name}({parameters})");
+                    }
+                }
+
+                // Check PowerSystem methods
+                var powerType = typeof(PowerSystem);
+                Logger.LogInfo($"=== PowerSystem Methods ===");
+                foreach (var method in powerType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                {
+                    if (method.Name.Contains("Update") || method.Name.Contains("GameTick"))
+                    {
+                        var parameters = string.Join(", ", System.Array.ConvertAll(method.GetParameters(), p => $"{p.ParameterType.Name} {p.Name}"));
+                        Logger.LogInfo($"  {method.Name}({parameters})");
+                    }
+                }
+
+                // Check CargoTraffic methods
+                var cargoType = typeof(CargoTraffic);
+                Logger.LogInfo($"=== CargoTraffic Methods ===");
+                foreach (var method in cargoType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                {
+                    if (method.Name.Contains("Update") || method.Name.Contains("GameTick"))
+                    {
+                        var parameters = string.Join(", ", System.Array.ConvertAll(method.GetParameters(), p => $"{p.ParameterType.Name} {p.Name}"));
+                        Logger.LogInfo($"  {method.Name}({parameters})");
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogWarning($"API diagnostics failed: {ex.Message}");
             }
         }
 

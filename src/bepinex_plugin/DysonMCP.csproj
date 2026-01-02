@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
+    <TargetFramework>net472</TargetFramework>
     <AssemblyName>DysonMCP</AssemblyName>
     <RootNamespace>DysonMCP</RootNamespace>
     <LangVersion>latest</LangVersion>
@@ -17,23 +17,27 @@
     <Version>1.0.0</Version>
   </PropertyGroup>
 
-  <!-- BepInEx References -->
+  <!-- BepInEx References (local DLLs from game installation) -->
   <ItemGroup>
-    <PackageReference Include="BepInEx.Core" Version="5.4.22" />
-    <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" />
-    <PackageReference Include="HarmonyX" Version="2.10.1" />
+    <Reference Include="BepInEx">
+      <HintPath>lib\BepInEx.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>lib\0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
-  <!--
-    DSP Game References
-    These need to be copied from your DSP installation:
-    %DSP_PATH%\DSPGAME_Data\Managed\
+  <!-- Default paths if environment variables not set -->
+  <PropertyGroup>
+    <DSP_REFS Condition="'$(DSP_REFS)' == ''">C:\SteamLibrary\steamapps\common\Dyson Sphere Program\DSPGAME_Data\Managed</DSP_REFS>
+    <DSP_PATH Condition="'$(DSP_PATH)' == ''">C:\SteamLibrary\steamapps\common\Dyson Sphere Program</DSP_PATH>
+  </PropertyGroup>
 
-    Set DSP_REFS environment variable to point to your reference directory
-    or update HintPath below.
-  -->
-  <ItemGroup Condition="Exists('$(DSP_REFS)')">
+  <!-- DSP Game References -->
+  <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath>$(DSP_REFS)\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>

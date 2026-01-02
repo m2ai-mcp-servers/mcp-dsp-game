@@ -19,21 +19,18 @@ namespace DysonMCP.Patches
         private const float BELT_MK3_THROUGHPUT = 30f;
 
         /// <summary>
-        /// Patch target: CargoTraffic.GameTick
+        /// Patch target: CargoTraffic.GameTickBeforePower
         /// This method manages all belt/path movement each tick.
         /// </summary>
-        [HarmonyPatch(typeof(CargoTraffic), "GameTick")]
+        [HarmonyPatch(typeof(CargoTraffic), "GameTickBeforePower")]
         [HarmonyPostfix]
         public static void CargoTrafficGameTick_Postfix(
             ref CargoTraffic __instance,
-            long time,
-            bool presentPlanet,
-            bool isActive)
+            long time)
         {
             try
             {
                 if (MetricsCollector.Instance == null) return;
-                if (!isActive) return;
 
                 // Only sample periodically to reduce overhead
                 _tickCounter++;
@@ -117,7 +114,7 @@ namespace DysonMCP.Patches
 
                 // Scan cargo buffer for items
                 // DSP uses a byte buffer where items are stored with their IDs
-                for (int i = 0; i < path.bufferLength; i += 4)
+                for (int i = 0; i < path.buffer.Length; i += 4)
                 {
                     if (i + 3 < path.buffer.Length)
                     {
@@ -164,18 +161,6 @@ namespace DysonMCP.Patches
             }
         }
 
-        /// <summary>
-        /// Patch for monitoring inserter activity (optional, for detailed logistics).
-        /// </summary>
-        [HarmonyPatch(typeof(InserterComponent), "InternalUpdate")]
-        [HarmonyPostfix]
-        public static void InserterInternalUpdate_Postfix(
-            ref InserterComponent __instance,
-            float power,
-            int[] insertedItems)
-        {
-            // Optional: Track inserter throughput for more detailed logistics analysis
-            // Currently not implemented to minimize performance impact
-        }
+        // InserterComponent patch removed - not implemented and has API compatibility issues
     }
 }

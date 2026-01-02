@@ -62,8 +62,8 @@ namespace DysonMCP.Patches
                         planetId: planetId,
                         assemblerId: __instance.id,
                         recipeId: __instance.recipeId,
-                        protoId: __instance.productIds != null && __instance.productIds.Length > 0
-                            ? __instance.productIds[0] : 0,
+                        protoId: __instance.products != null && __instance.products.Length > 0
+                            ? __instance.products[0] : 0,
                         itemsProduced: itemsProduced,
                         gameTick: gameTick,
                         inputStarved: inputStarved,
@@ -115,7 +115,7 @@ namespace DysonMCP.Patches
                 {
                     // Check if produced buffer is near capacity
                     // Assemblers typically have 4-slot output buffers (4 * stack size)
-                    int maxBuffer = 4 * GetStackSize(assembler.productIds[i]);
+                    int maxBuffer = 4 * GetStackSize(assembler.products[i]);
                     if (assembler.produced[i] >= maxBuffer - assembler.productCounts[i])
                     {
                         return true;

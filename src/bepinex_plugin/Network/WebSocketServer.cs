@@ -298,6 +298,13 @@ namespace DysonMCP
             byte[] payload = Encoding.UTF8.GetBytes(data);
             byte[] frame;
 
+            // Limit payload size to 1MB to prevent memory issues
+            if (payload.Length > 1_000_000)
+            {
+                DysonMCPPlugin.Log?.LogWarning($"Payload too large ({payload.Length} bytes), truncating message");
+                payload = Encoding.UTF8.GetBytes("{\"error\":\"payload_too_large\"}");
+            }
+
             if (payload.Length <= 125)
             {
                 frame = new byte[2 + payload.Length];
@@ -316,12 +323,14 @@ namespace DysonMCP
             }
             else
             {
+                // Use long for proper 64-bit length encoding
+                long len = payload.Length;
                 frame = new byte[10 + payload.Length];
                 frame[0] = (byte)(0x80 | (int)opcode);
                 frame[1] = 127;
                 for (int i = 0; i < 8; i++)
                 {
-                    frame[2 + i] = (byte)(payload.Length >> ((7 - i) * 8));
+                    frame[2 + i] = (byte)(len >> ((7 - i) * 8));
                 }
                 Array.Copy(payload, 0, frame, 10, payload.Length);
             }

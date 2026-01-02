@@ -23,7 +23,8 @@ namespace DysonMCP.Patches
             ref PowerSystem __instance,
             long time,
             bool isActive,
-            bool isMultithreadMode)
+            bool multithreaded,
+            int threadOrdinal)
         {
             try
             {
@@ -132,15 +133,6 @@ namespace DysonMCP.Patches
             }
         }
 
-        /// <summary>
-        /// Alternative patch for PlanetFactory.GameTick to ensure we catch all power updates.
-        /// </summary>
-        [HarmonyPatch(typeof(PlanetFactory), "GameTick")]
-        [HarmonyPostfix]
-        public static void PlanetFactoryGameTick_Postfix(ref PlanetFactory __instance, long time)
-        {
-            // This is a backup patch in case PowerSystem.GameTick isn't called directly
-            // Most power tracking is done in the PowerSystem patch above
-        }
+        // PlanetFactory.GameTick patch removed - method doesn't exist in current DSP version
     }
 }
