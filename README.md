@@ -110,7 +110,7 @@ See [Development Environment Setup](docs/dyson_mcp.md) for detailed instructions
 
 ```bash
 # Clone repository
-git clone https://github.com/MatthewSnow2/mcp-dsp.git
+git clone https://github.com/m2ai-mcp-servers/mcp-dsp.git
 cd mcp-dsp
 
 # Python setup

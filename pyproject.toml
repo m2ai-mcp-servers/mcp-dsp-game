@@ -38,9 +38,9 @@ dev = [
 dyson-mcp = "mcp_server.server:main"
 
 [project.urls]
-Homepage = "https://github.com/MatthewSnow2/mcp-dsp"
-Repository = "https://github.com/MatthewSnow2/mcp-dsp"
-Issues = "https://github.com/MatthewSnow2/mcp-dsp/issues"
+Homepage = "https://github.com/m2ai-mcp-servers/mcp-dsp"
+Repository = "https://github.com/m2ai-mcp-servers/mcp-dsp"
+Issues = "https://github.com/m2ai-mcp-servers/mcp-dsp/issues"
 
 [build-system]
 requires = ["hatchling"]
